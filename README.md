@@ -51,9 +51,6 @@ fr1-srv-worker-k8s-03
         CPU : Healty
         Node Status : Ready
 ```
-
-<br>
-
 ***
 
 ## How to install 
