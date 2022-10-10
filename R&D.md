@@ -21,6 +21,3 @@ Ideas & Features:
 -> How to install
 
 -> Deploy for dummies + Predefined Template
-
-
-
