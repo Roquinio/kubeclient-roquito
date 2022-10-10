@@ -1,6 +1,11 @@
 # Kubernetes client wrotes in Golang
+
+## Purpose
+
+>The purpose of this kube client is to offer a better tool for manipulate a kubernetes cluster and replace *kubectl* :tada:
+
 ## Usage 
-<br>
+
 
 ### &nbsp;Help pannel
 ```
