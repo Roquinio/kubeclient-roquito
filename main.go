@@ -7,10 +7,12 @@ import (
 	"os"
 	"path/filepath"
 
-	// Kubernetes Go Client packages
+	// Prettier output ouput
 	"github.com/TwiN/go-color"              // Print Color
 	"github.com/common-nighthawk/go-figure" // ASCII Art
 	"github.com/k0kubun/pp/v3"              // Print Color V2
+
+	// Kubernetes Go Client packages
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
