@@ -2,7 +2,7 @@
 
 ## Purpose
 
->The purpose of this kube client is to offer a better tool for manipulate a kubernetes cluster and replace *kubectl* :tada:
+>The goal of this kubernetes client is to offer a better tool for manipulate a kubernetes cluster and replace *kubectl* :tada:
 
 ## Usage 
 
