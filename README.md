@@ -2,13 +2,13 @@
 ## Usage 
 <br>
 
-### &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Help pannel
+### &nbsp;Help pannel
 ```
 roquito -h 
 ```
 ***
 
-### &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overview of the cluster
+### &nbsp;Overview of the cluster
 
 ```
 roquito
@@ -80,5 +80,6 @@ git clone https://github.com/Roquinio/kubeclient-roquito.git
 cd kubeclient-roquito/
 
 go build
+
 ./roquito
 ```
