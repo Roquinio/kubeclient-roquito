@@ -7,12 +7,13 @@ import (
 	"os"
 	"path/filepath"
 
-	// Prettier output ouput
+	// Prettier output
 	"github.com/TwiN/go-color"              // Print Color
 	"github.com/common-nighthawk/go-figure" // ASCII Art
+	"github.com/jedib0t/go-pretty/v6/table" // Pretty table
 
-	// Print Color V2
 	// Kubernetes Go Client packages
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -24,7 +25,6 @@ import (
 // Functions
 func main() {
 	subCommand()
-
 }
 
 func subCommand() {
@@ -61,13 +61,52 @@ func getCMD() {
 		secondArgs := os.Args[2]
 		switch secondArgs {
 		case "deployment", "dp":
-			fmt.Println("Test Deploy")
-
+			getDPCMD()
 		default:
 			fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, secondArgs)
 		}
 	} else {
 		fmt.Printf(color.Red + "You must specify the type of resource to get.\n" + color.Reset)
+	}
+}
+
+func getDPCMD() {
+
+	if os.Args[3] == "-n" {
+
+		ns := os.Args[4]
+
+		var kubeconfig *string
+
+		if home := homedir.HomeDir(); home != "" {
+			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		} else {
+			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		}
+		flag.Parse()
+
+		config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		clientset, err := kubernetes.NewForConfig(config)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		dp, _ := clientset.AppsV1().Deployments(ns).List(context.TODO(), metav1.ListOptions{}) // apiv1.NamespaceDefault
+
+		t := table.NewWriter()
+		t.SetOutputMirror(os.Stdout)
+		t.SetStyle(table.StyleLight)
+		t.AppendHeader(table.Row{"Name", "Namespace", "Creation Date", "Available Pods"})
+		for _, dp := range dp.Items {
+
+			t.AppendRows([]table.Row{{dp.Name, dp.Namespace, dp.CreationTimestamp, dp.Status.AvailableReplicas}})
+			t.AppendSeparator()
+		}
+		t.Render()
 	}
 }
 
