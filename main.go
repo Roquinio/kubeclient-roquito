@@ -10,8 +10,8 @@ import (
 	// Prettier output ouput
 	"github.com/TwiN/go-color"              // Print Color
 	"github.com/common-nighthawk/go-figure" // ASCII Art
-	"github.com/k0kubun/pp/v3"              // Print Color V2
 
+	// Print Color V2
 	// Kubernetes Go Client packages
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -28,21 +28,46 @@ func main() {
 }
 
 func subCommand() {
-	// helpCmd := flag.NewFlagSet("help", flag.ExitOnError)
 	argLenght := os.Args[1:]
 	if len(argLenght) >= 1 {
-		args := os.Args[1]
-		switch args {
+		firstArgs := os.Args[1]
+		switch firstArgs {
 		case "help", "-h":
-			// helpCmd.Parse(os.Args[2:])
-			h := "helpppp"
-			pp.Println(h)
-
+			helpCMD()
+		case "g", "get":
+			getCMD()
 		default:
-			fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, args)
+			fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, firstArgs)
 		}
 	} else {
 		emptyCMD()
+	}
+}
+
+// Function activated when args -h or help given
+func helpCMD() {
+	helpOutput := `
+Usage: roquito [ARGS]...
+	No args  : Overview of the cluster
+	-h, help : Help pannel
+				`
+	fmt.Println(color.Purple + helpOutput + color.Reset)
+
+}
+
+func getCMD() {
+	argLenght := os.Args[1:]
+	if len(argLenght) >= 2 {
+		secondArgs := os.Args[2]
+		switch secondArgs {
+		case "deployment", "dp":
+			fmt.Println("Test Deploy")
+
+		default:
+			fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, secondArgs)
+		}
+	} else {
+		fmt.Printf(color.Red + "You must specify the type of resource to get.\n" + color.Reset)
 	}
 }
 
