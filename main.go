@@ -63,6 +63,8 @@ func getCMD() {
 			getDPCMD()
 		case "namespaces", "ns":
 			getNSCMD()
+		case "pods", "p":
+			getPODCMD()
 		default:
 			fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, secondArgs)
 		}
@@ -233,6 +235,136 @@ func getNSCMD() {
 		t.AppendSeparator()
 	}
 	t.Render()
+
+}
+
+// Function activated when get pods given
+func getPODCMD() {
+	if len(os.Args) == 3 {
+		var kubeconfig *string
+
+		if home := homedir.HomeDir(); home != "" {
+			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		} else {
+			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		}
+		flag.Parse()
+
+		config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		clientset, err := kubernetes.NewForConfig(config)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		pods, _ := clientset.CoreV1().Pods(metav1.NamespaceDefault).List(context.TODO(), metav1.ListOptions{})
+		var findPODS bool
+		var podsList []string
+
+		for _, pods := range pods.Items {
+			podsList = append(podsList, pods.Name)
+		}
+
+		if len(podsList) >= 1 {
+			findPODS = true
+		} else {
+			findPODS = false
+		}
+		if findPODS {
+			t := table.NewWriter()
+			t.SetOutputMirror(os.Stdout)
+			t.SetStyle(table.StyleLight)
+			t.AppendHeader(table.Row{"Name", "Namespace", "Creation Date", "Available Pods"})
+			for _, pods := range pods.Items {
+				t.AppendRows([]table.Row{{pods.Name, pods.Namespace, pods.CreationTimestamp, pods.Status.ContainerStatuses}})
+				t.AppendSeparator()
+			}
+			t.Render()
+		} else {
+			fmt.Println(color.Yellow + "No ressource found in " + metav1.NamespaceDefault + " namespaces" + color.Reset)
+		}
+
+	} else if os.Args[3] == "-n" {
+		argLenght := os.Args[1:]
+		if len(argLenght) < 4 {
+			fmt.Println(color.Red + "You must specify a namespaces" + color.Reset)
+		} else {
+			n := os.Args[4]
+
+			var kubeconfig *string
+
+			if home := homedir.HomeDir(); home != "" {
+				kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+			} else {
+				kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+			}
+			flag.Parse()
+
+			config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+			if err != nil {
+				panic(err.Error())
+			}
+
+			clientset, err := kubernetes.NewForConfig(config)
+			if err != nil {
+				panic(err.Error())
+			}
+
+			pods, _ := clientset.CoreV1().Pods(n).List(context.TODO(), metav1.ListOptions{})
+			ns, _ := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+
+			var nsList []string
+
+			for _, ns := range ns.Items {
+				nsList = append(nsList, ns.Name)
+			}
+			var findNS bool
+			for _, v := range nsList {
+				if v == n {
+					findNS = true
+					break
+				} else {
+					findNS = false
+				}
+			}
+			if findNS {
+				var findPODS bool
+				var podsList []string
+
+				for _, pods := range pods.Items {
+					podsList = append(podsList, pods.Name)
+				}
+
+				if len(podsList) >= 1 {
+					findPODS = true
+				} else {
+					findPODS = false
+				}
+				if findPODS {
+					t := table.NewWriter()
+					t.SetOutputMirror(os.Stdout)
+					t.SetStyle(table.StyleLight)
+					t.AppendHeader(table.Row{"Name", "Namespace", "Creation Date", "Host IP", "State"})
+					for _, pods := range pods.Items {
+
+						t.AppendRows([]table.Row{{pods.Name, pods.Namespace, pods.CreationTimestamp, pods.Status.HostIP, pods.Status.Phase}})
+						t.AppendSeparator()
+					}
+					t.Render()
+				} else {
+					fmt.Println(color.Yellow + "No ressource found in " + n + " namespaces" + color.Reset)
+				}
+			} else {
+				fmt.Printf(color.Red+"Namespace not found '%s'\n"+color.Reset, n)
+			}
+		}
+
+	} else {
+		fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, os.Args[3])
+	}
 
 }
 

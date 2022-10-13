@@ -5,11 +5,9 @@ Ideas & Features:
 
     |-> Alias bash : r7o
 
-    |--> No args : overview of cluster + metrics + color + ASCII
+    |--> No args : overview of cluster + metrics + color + ASCII: DONE
 
-    |---> -h : help command
-
-    |----> if args not defined -> kubectl
+    |---> -h : help command : DONE
 
     |-----> Auto-completion
 
