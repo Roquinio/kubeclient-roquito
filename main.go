@@ -13,7 +13,6 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table" // Pretty table
 
 	// Kubernetes Go Client packages
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -62,6 +61,8 @@ func getCMD() {
 		switch secondArgs {
 		case "deployment", "dp":
 			getDPCMD()
+		case "namespaces", "ns":
+			getNSCMD()
 		default:
 			fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, secondArgs)
 		}
@@ -198,6 +199,41 @@ func getDPCMD() {
 	} else {
 		fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, os.Args[3])
 	}
+}
+
+// Function activated when get ns given
+func getNSCMD() {
+	var kubeconfig *string
+
+	if home := homedir.HomeDir(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	}
+	flag.Parse()
+
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+	ns, _ := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.SetStyle(table.StyleLight)
+	t.AppendHeader(table.Row{"Name", "Creation Date"})
+	for _, ns := range ns.Items {
+
+		t.AppendRows([]table.Row{{ns.Name, ns.CreationTimestamp}})
+		t.AppendSeparator()
+	}
+	t.Render()
+
 }
 
 // Function activated when no args given
