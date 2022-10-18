@@ -1,4 +1,4 @@
-# Kubernetes client wrotes in Golang
+# Roquito : the new kubernetes client
 
 ## Purpose
 
