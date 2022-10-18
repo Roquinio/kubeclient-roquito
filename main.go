@@ -26,6 +26,7 @@ func main() {
 	subCommand()
 }
 
+// Function
 func subCommand() {
 	argLenght := os.Args[1:]
 	if len(argLenght) >= 1 {
@@ -45,15 +46,22 @@ func subCommand() {
 
 // Function activated when args -h or help given
 func helpCMD() {
-	helpOutput := `
-Usage: roquito [ARGS]...
+	helpOutput := `Usage: roquito [ARGS]...
 	No args  : Overview of the cluster
 	-h, help : Help pannel
-				`
+	get, g   : Get information about some ressources
+		- pods, p 
+			Usage : roquito get pods -n [namespaces]
+		- namespaces, ns
+			Usage : roquito get namespaces
+		- deployment, dp	
+			Usage : roquito get deployment -n [namespaces]
+		- services, svc
+			Usage : roquito get services -n [namespaces]`
 	fmt.Println(color.Purple + helpOutput + color.Reset)
-
 }
 
+// Function activated for get verbs
 func getCMD() {
 	argLenght := os.Args[1:]
 	if len(argLenght) >= 2 {
@@ -65,6 +73,8 @@ func getCMD() {
 			getNSCMD()
 		case "pods", "p":
 			getPODCMD()
+		case "services", "svc":
+			getSVCCMD()
 		default:
 			fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, secondArgs)
 		}
@@ -235,7 +245,6 @@ func getNSCMD() {
 		t.AppendSeparator()
 	}
 	t.Render()
-
 }
 
 // Function activated when get pods given
@@ -277,9 +286,9 @@ func getPODCMD() {
 			t := table.NewWriter()
 			t.SetOutputMirror(os.Stdout)
 			t.SetStyle(table.StyleLight)
-			t.AppendHeader(table.Row{"Name", "Namespace", "Creation Date", "Available Pods"})
+			t.AppendHeader(table.Row{"Name", "Namespace", "Creation Date", "Host IP", "State"})
 			for _, pods := range pods.Items {
-				t.AppendRows([]table.Row{{pods.Name, pods.Namespace, pods.CreationTimestamp, pods.Status.ContainerStatuses}})
+				t.AppendRows([]table.Row{{pods.Name, pods.Namespace, pods.CreationTimestamp, pods.Status.HostIP, pods.Status.ContainerStatuses}})
 				t.AppendSeparator()
 			}
 			t.Render()
@@ -365,7 +374,135 @@ func getPODCMD() {
 	} else {
 		fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, os.Args[3])
 	}
+}
 
+//Function activated when get services given
+func getSVCCMD() {
+	if len(os.Args) == 3 {
+		var kubeconfig *string
+
+		if home := homedir.HomeDir(); home != "" {
+			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		} else {
+			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		}
+		flag.Parse()
+
+		config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		clientset, err := kubernetes.NewForConfig(config)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		svc, _ := clientset.CoreV1().Services(metav1.NamespaceDefault).List(context.TODO(), metav1.ListOptions{})
+		var findSVC bool
+		var svcList []string
+
+		for _, svc := range svc.Items {
+			svcList = append(svcList, svc.Name)
+		}
+
+		if len(svcList) >= 1 {
+			findSVC = true
+		} else {
+			findSVC = false
+		}
+		if findSVC {
+			t := table.NewWriter()
+			t.SetOutputMirror(os.Stdout)
+			t.SetStyle(table.StyleLight)
+			t.AppendHeader(table.Row{"Name", "Namespace", "Creation Date"})
+			for _, svc := range svc.Items {
+				t.AppendRows([]table.Row{{svc.Name, svc.Namespace, svc.CreationTimestamp}})
+				t.AppendSeparator()
+			}
+			t.Render()
+		} else {
+			fmt.Println(color.Yellow + "No ressource found in " + metav1.NamespaceDefault + " namespaces" + color.Reset)
+		}
+
+	} else if os.Args[3] == "-n" {
+		argLenght := os.Args[1:]
+		if len(argLenght) < 4 {
+			fmt.Println(color.Red + "You must specify a namespaces" + color.Reset)
+		} else {
+			n := os.Args[4]
+
+			var kubeconfig *string
+
+			if home := homedir.HomeDir(); home != "" {
+				kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+			} else {
+				kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+			}
+			flag.Parse()
+
+			config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+			if err != nil {
+				panic(err.Error())
+			}
+
+			clientset, err := kubernetes.NewForConfig(config)
+			if err != nil {
+				panic(err.Error())
+			}
+
+			svc, _ := clientset.CoreV1().Services(n).List(context.TODO(), metav1.ListOptions{})
+			ns, _ := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+
+			var nsList []string
+
+			for _, ns := range ns.Items {
+				nsList = append(nsList, ns.Name)
+			}
+			var findNS bool
+			for _, v := range nsList {
+				if v == n {
+					findNS = true
+					break
+				} else {
+					findNS = false
+				}
+			}
+			if findNS {
+				var findSVC bool
+				var svcList []string
+
+				for _, svc := range svc.Items {
+					svcList = append(svcList, svc.Name)
+				}
+
+				if len(svcList) >= 1 {
+					findSVC = true
+				} else {
+					findSVC = false
+				}
+				if findSVC {
+					t := table.NewWriter()
+					t.SetOutputMirror(os.Stdout)
+					t.SetStyle(table.StyleLight)
+					t.AppendHeader(table.Row{"Name", "Namespace", "Creation Date"})
+					for _, svc := range svc.Items {
+
+						t.AppendRows([]table.Row{{svc.Name, svc.Namespace, svc.CreationTimestamp}})
+						t.AppendSeparator()
+					}
+					t.Render()
+				} else {
+					fmt.Println(color.Yellow + "No ressource found in " + n + " namespaces" + color.Reset)
+				}
+			} else {
+				fmt.Printf(color.Red+"Namespace not found '%s'\n"+color.Reset, n)
+			}
+		}
+
+	} else {
+		fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, os.Args[3])
+	}
 }
 
 // Function activated when no args given
