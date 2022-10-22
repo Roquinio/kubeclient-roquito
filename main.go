@@ -27,6 +27,8 @@ func main() {
 }
 
 // Function
+
+// Function for grab argumment from the roquito command
 func subCommand() {
 	argLenght := os.Args[1:]
 	if len(argLenght) >= 1 {
@@ -75,6 +77,8 @@ func getCMD() {
 			getPODCMD()
 		case "services", "svc":
 			getSVCCMD()
+		case "nodes":
+			getNODESCMD()
 		default:
 			fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, secondArgs)
 		}
@@ -376,7 +380,7 @@ func getPODCMD() {
 	}
 }
 
-//Function activated when get services given
+// Function activated when get services given
 func getSVCCMD() {
 	if len(os.Args) == 3 {
 		var kubeconfig *string
@@ -503,6 +507,49 @@ func getSVCCMD() {
 	} else {
 		fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, os.Args[3])
 	}
+}
+
+// Function activated when get nodes given
+func getNODESCMD() {
+	var kubeconfig *string
+
+	if home := homedir.HomeDir(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	}
+	flag.Parse()
+
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+	nodes, _ := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.SetStyle(table.StyleLight)
+	t.AppendHeader(table.Row{"Name", "IP", "Roles", "Creation Date"})
+	for _, nodes := range nodes.Items {
+		r, f := nodes.Labels["node-role.kubernetes.io/worker"]
+		if !f {
+			r, f = nodes.Labels["node-role.kubernetes.io/master"]
+			if f {
+				r = "master"
+			} else {
+				r = "unknown"
+			}
+		}
+		t.AppendRows([]table.Row{{nodes.Name, nodes.Status.Addresses[0], r, nodes.CreationTimestamp}})
+		t.AppendSeparator()
+	}
+	t.Render()
+
 }
 
 // Function activated when no args given

@@ -13,7 +13,7 @@ Ideas & Features:
 
     |------> Simplify kube command : Exec, Describe, Node Role Management, Default Namespace
 
-    |-------> Give better shortcut of kube command : ``` r7o gp nginx # roquito get pods nginx-75432151 -> if multiple pods : list all pods start by nginx ```
+    |-------> Give better shortcut of kube command : ``` r7o g p nginx # roquito get pods nginx-75432151 -> if multiple pods : list all pods start by nginx ```
 
 
 -> How to install
