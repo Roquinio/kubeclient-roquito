@@ -64,7 +64,7 @@ fr1-srv-worker-k8s-03
 #### &nbsp; Command
 
 ```
-curl ftp.baptisteroques.fr/public/roquito/install-roquito.sh | bash
+curl https://ftp.baptisteroques.fr/public/install-roquito.sh | bash
 ```
 
 ### Compiled by yourself 
