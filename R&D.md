@@ -19,3 +19,5 @@ Ideas & Features:
 -> How to install
 
 -> Deploy for dummies + Predefined Template
+
+-> Error management to permit test to performs correctly & show clear msg

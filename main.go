@@ -59,7 +59,10 @@ func helpCMD() {
 		- deployment, dp	
 			Usage : roquito get deployment -n [namespaces]
 		- services, svc
-			Usage : roquito get services -n [namespaces]`
+			Usage : roquito get services -n [namespaces]
+		- nodes, n
+			Usage : roquito get nodes`
+
 	fmt.Println(color.Purple + helpOutput + color.Reset)
 }
 
@@ -77,7 +80,7 @@ func getCMD() {
 			getPODCMD()
 		case "services", "svc":
 			getSVCCMD()
-		case "nodes":
+		case "nodes", "n":
 			getNODESCMD()
 		default:
 			fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, secondArgs)
@@ -244,7 +247,6 @@ func getNSCMD() {
 	t.SetStyle(table.StyleLight)
 	t.AppendHeader(table.Row{"Name", "Creation Date"})
 	for _, ns := range ns.Items {
-
 		t.AppendRows([]table.Row{{ns.Name, ns.CreationTimestamp}})
 		t.AppendSeparator()
 	}
@@ -489,10 +491,10 @@ func getSVCCMD() {
 					t := table.NewWriter()
 					t.SetOutputMirror(os.Stdout)
 					t.SetStyle(table.StyleLight)
-					t.AppendHeader(table.Row{"Name", "Namespace", "Creation Date"})
+					t.AppendHeader(table.Row{"Name", "Namespace", "Cluster IP", "Ports", "Creation Date"})
 					for _, svc := range svc.Items {
 
-						t.AppendRows([]table.Row{{svc.Name, svc.Namespace, svc.CreationTimestamp}})
+						t.AppendRows([]table.Row{{svc.Name, svc.Namespace, svc.Spec.ClusterIP, svc.Spec.Ports, svc.CreationTimestamp}})
 						t.AppendSeparator()
 					}
 					t.Render()
@@ -549,7 +551,6 @@ func getNODESCMD() {
 		t.AppendSeparator()
 	}
 	t.Render()
-
 }
 
 // Function activated when no args given
