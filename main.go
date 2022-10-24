@@ -65,7 +65,7 @@ func helpCMD() {
 			Usage : roquito get services -n [namespaces]
 		- nodes, n
 			Usage : roquito get nodes
-			
+
 	search	 : Search ressources in all namespaces
 		- pods
 			Usage : roquito search pods nginx
@@ -658,58 +658,87 @@ func searchCMD() {
 		panic(err.Error())
 	}
 
-	obj := os.Args[2]
-	switch obj {
-	case "pods":
-		ns, _ := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+	if len(os.Args) < 3 {
+		fmt.Println(color.Red + "You must specify the type of resource to get" + color.Reset)
+	} else {
 
-		podsArgs := os.Args[3]
-		var nsList []string
+		obj := os.Args[2]
+		switch obj {
+		case "pods":
+			if len(os.Args) < 4 {
+				fmt.Println(color.Red + "You must specify the name of the pods" + color.Reset)
+			} else {
+				ns, _ := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 
-		for _, ns := range ns.Items {
-			nsList = append(nsList, ns.Name)
-		}
+				podsArgs := os.Args[3]
+				var nsList []string
 
-		t := table.NewWriter()
-		t.SetOutputMirror(os.Stdout)
-		t.SetStyle(table.StyleLight)
-		t.AppendHeader(table.Row{"Name", "Namespace", "Creation Date", "Host IP", "State"})
-		for _, nameNS := range nsList {
-			pods, _ := clientset.CoreV1().Pods(nameNS).List(context.TODO(), metav1.ListOptions{})
+				for _, ns := range ns.Items {
+					nsList = append(nsList, ns.Name)
+				}
 
-			for _, pods := range pods.Items {
-				if strings.Contains(pods.Name, podsArgs) {
-					t.AppendRows([]table.Row{{pods.Name, pods.Namespace, pods.CreationTimestamp, pods.Status.HostIP, pods.Status.Phase}})
-					t.AppendSeparator()
+				count := 0
+				t := table.NewWriter()
+				t.SetOutputMirror(os.Stdout)
+				t.SetStyle(table.StyleLight)
+				t.AppendHeader(table.Row{"Name", "Namespace", "Creation Date", "Host IP", "State"})
+				for _, nameNS := range nsList {
+					pods, _ := clientset.CoreV1().Pods(nameNS).List(context.TODO(), metav1.ListOptions{})
+
+					for _, pods := range pods.Items {
+						if strings.Contains(pods.Name, podsArgs) {
+							count++
+							t.AppendRows([]table.Row{{pods.Name, pods.Namespace, pods.CreationTimestamp, pods.Status.HostIP, pods.Status.Phase}})
+							t.AppendSeparator()
+
+						}
+					}
 
 				}
-			}
-		}
-		t.Render()
-	case "services":
-		ns, _ := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
-
-		svcArgs := os.Args[3]
-		var nsList []string
-
-		for _, ns := range ns.Items {
-			nsList = append(nsList, ns.Name)
-		}
-
-		t := table.NewWriter()
-		t.SetOutputMirror(os.Stdout)
-		t.SetStyle(table.StyleLight)
-		t.AppendHeader(table.Row{"Name", "Namespace", "Cluster IP", "Ports", "Creation Date"})
-		for _, nameNS := range nsList {
-			svc, _ := clientset.CoreV1().Services(nameNS).List(context.TODO(), metav1.ListOptions{})
-			for _, svc := range svc.Items {
-				if strings.Contains(svc.Name, svcArgs) {
-					t.AppendRows([]table.Row{{svc.Name, svc.Namespace, svc.Spec.ClusterIP, svc.Spec.Ports, svc.CreationTimestamp}})
-					t.AppendSeparator()
+				if count < 1 {
+					fmt.Println(color.Red + "The pods named " + podsArgs + " was not found" + color.Reset)
+				} else {
+					t.Render()
 				}
 			}
-		}
-		t.Render()
+		case "services":
+			if len(os.Args) < 4 {
+				fmt.Println(color.Red + "You must specify the name of the services" + color.Reset)
+			} else {
 
+				ns, _ := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+
+				svcArgs := os.Args[3]
+				var nsList []string
+
+				for _, ns := range ns.Items {
+					nsList = append(nsList, ns.Name)
+				}
+				count := 0
+
+				t := table.NewWriter()
+				t.SetOutputMirror(os.Stdout)
+				t.SetStyle(table.StyleLight)
+				t.AppendHeader(table.Row{"Name", "Namespace", "Cluster IP", "Ports", "Creation Date"})
+				for _, nameNS := range nsList {
+					svc, _ := clientset.CoreV1().Services(nameNS).List(context.TODO(), metav1.ListOptions{})
+					for _, svc := range svc.Items {
+						if strings.Contains(svc.Name, svcArgs) {
+							count++
+							t.AppendRows([]table.Row{{svc.Name, svc.Namespace, svc.Spec.ClusterIP, svc.Spec.Ports, svc.CreationTimestamp}})
+							t.AppendSeparator()
+						}
+					}
+				}
+				if count < 1 {
+					fmt.Println(color.Red + "The services named " + svcArgs + " was not found" + color.Reset)
+				} else {
+					t.Render()
+				}
+			}
+
+		default:
+			fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, os.Args[2])
+		}
 	}
 }
