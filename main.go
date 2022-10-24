@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	// Prettier output
 	"github.com/TwiN/go-color"              // Print Color
@@ -38,6 +39,8 @@ func subCommand() {
 			helpCMD()
 		case "g", "get":
 			getCMD()
+		case "search":
+			searchCMD()
 		default:
 			fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, firstArgs)
 		}
@@ -61,7 +64,13 @@ func helpCMD() {
 		- services, svc
 			Usage : roquito get services -n [namespaces]
 		- nodes, n
-			Usage : roquito get nodes`
+			Usage : roquito get nodes
+			
+	search	 : Search ressources in all namespaces
+		- pods
+			Usage : roquito search pods nginx
+		- services
+			Usage : roquito search services example-svc`
 
 	fmt.Println(color.Purple + helpOutput + color.Reset)
 }
@@ -294,7 +303,7 @@ func getPODCMD() {
 			t.SetStyle(table.StyleLight)
 			t.AppendHeader(table.Row{"Name", "Namespace", "Creation Date", "Host IP", "State"})
 			for _, pods := range pods.Items {
-				t.AppendRows([]table.Row{{pods.Name, pods.Namespace, pods.CreationTimestamp, pods.Status.HostIP, pods.Status.ContainerStatuses}})
+				t.AppendRows([]table.Row{{pods.Name, pods.Namespace, pods.CreationTimestamp, pods.Status.HostIP, pods.Status.Phase}})
 				t.AppendSeparator()
 			}
 			t.Render()
@@ -493,7 +502,6 @@ func getSVCCMD() {
 					t.SetStyle(table.StyleLight)
 					t.AppendHeader(table.Row{"Name", "Namespace", "Cluster IP", "Ports", "Creation Date"})
 					for _, svc := range svc.Items {
-
 						t.AppendRows([]table.Row{{svc.Name, svc.Namespace, svc.Spec.ClusterIP, svc.Spec.Ports, svc.CreationTimestamp}})
 						t.AppendSeparator()
 					}
@@ -626,5 +634,82 @@ func emptyCMD() {
 
 			}
 		}
+	}
+}
+
+// Function activated when search args given
+func searchCMD() {
+	var kubeconfig *string
+
+	if home := homedir.HomeDir(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	}
+	flag.Parse()
+
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	obj := os.Args[2]
+	switch obj {
+	case "pods":
+		ns, _ := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+
+		podsArgs := os.Args[3]
+		var nsList []string
+
+		for _, ns := range ns.Items {
+			nsList = append(nsList, ns.Name)
+		}
+
+		t := table.NewWriter()
+		t.SetOutputMirror(os.Stdout)
+		t.SetStyle(table.StyleLight)
+		t.AppendHeader(table.Row{"Name", "Namespace", "Creation Date", "Host IP", "State"})
+		for _, nameNS := range nsList {
+			pods, _ := clientset.CoreV1().Pods(nameNS).List(context.TODO(), metav1.ListOptions{})
+
+			for _, pods := range pods.Items {
+				if strings.Contains(pods.Name, podsArgs) {
+					t.AppendRows([]table.Row{{pods.Name, pods.Namespace, pods.CreationTimestamp, pods.Status.HostIP, pods.Status.Phase}})
+					t.AppendSeparator()
+
+				}
+			}
+		}
+		t.Render()
+	case "services":
+		ns, _ := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+
+		svcArgs := os.Args[3]
+		var nsList []string
+
+		for _, ns := range ns.Items {
+			nsList = append(nsList, ns.Name)
+		}
+
+		t := table.NewWriter()
+		t.SetOutputMirror(os.Stdout)
+		t.SetStyle(table.StyleLight)
+		t.AppendHeader(table.Row{"Name", "Namespace", "Cluster IP", "Ports", "Creation Date"})
+		for _, nameNS := range nsList {
+			svc, _ := clientset.CoreV1().Services(nameNS).List(context.TODO(), metav1.ListOptions{})
+			for _, svc := range svc.Items {
+				if strings.Contains(svc.Name, svcArgs) {
+					t.AppendRows([]table.Row{{svc.Name, svc.Namespace, svc.Spec.ClusterIP, svc.Spec.Ports, svc.CreationTimestamp}})
+					t.AppendSeparator()
+				}
+			}
+		}
+		t.Render()
+
 	}
 }
