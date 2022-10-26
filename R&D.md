@@ -21,3 +21,5 @@ Ideas & Features:
 -> Deploy for dummies + Predefined Template
 
 -> Error management to permit test to performs correctly & show clear msg
+
+-> Test if user have kubeconfig before trying using roquito kube client
