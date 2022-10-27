@@ -3,7 +3,7 @@
 Ideas & Features: 
  -> roquito 
 
-    |-> Alias bash : r7o
+    |-> Alias bash : r7o : DONE
 
     |--> No args : overview of cluster + metrics + color + ASCII: DONE
 
@@ -16,7 +16,7 @@ Ideas & Features:
     |-------> Give better shortcut of kube command : ``` r7o g p nginx # roquito get pods nginx-75432151 -> if multiple pods : list all pods start by nginx ```
 
 
--> How to install
+-> How to install : DONE
 
 -> Deploy for dummies + Predefined Template
 
