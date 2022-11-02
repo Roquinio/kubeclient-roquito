@@ -91,6 +91,8 @@ func getCMD() {
 			getSVCCMD()
 		case "nodes", "n":
 			getNODESCMD()
+		case "pvc":
+			getPVCLAIMCMD()
 		default:
 			fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, secondArgs)
 		}
@@ -559,6 +561,61 @@ func getNODESCMD() {
 		t.AppendSeparator()
 	}
 	t.Render()
+}
+
+func getPVCLAIMCMD() {
+	if len(os.Args) == 3 {
+		var kubeconfig *string
+
+		if home := homedir.HomeDir(); home != "" {
+			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		} else {
+			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		}
+		flag.Parse()
+
+		config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		clientset, err := kubernetes.NewForConfig(config)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		pvc, _ := clientset.CoreV1().persistentvolumeclaims(metav1.NamespaceDefault).List(context.TODO(), metav1.ListOptions{})
+		var findSVC bool
+		var pvcList []string
+
+		for _, pvc := range pvc.Items {
+			pvcList = append(pvcList, pvc.Name)
+		}
+
+		if len(pvcList) >= 1 {
+			findPVC = true
+		} else {
+			findPVC = false
+		}
+		if findPVC {
+			t := table.NewWriter()
+			t.SetOutputMirror(os.Stdout)
+			t.SetStyle(table.StyleLight)
+			t.AppendHeader(table.Row{"Name", "Namespace", "Creation Date"})
+			for _, pvc := range pvc.Items {
+				t.AppendRows([]table.Row{{pvc.Name, pvc.Namespace, pvc.CreationTimestamp}})
+				t.AppendSeparator()
+			}
+			t.Render()
+		} else {
+			fmt.Println(color.Yellow + "No ressource found in " + metav1.NamespaceDefault + " namespaces" + color.Reset)
+		}
+
+	} else if os.Args[3] == "-n"{
+
+	} else {
+		fmt.Printf(color.Red+"Unknown synthax '%s'\n"+color.Reset, os.Args[3])
+	}
 }
 
 // Function activated when no args given
